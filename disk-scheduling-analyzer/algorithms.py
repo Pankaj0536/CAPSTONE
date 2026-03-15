@@ -25,11 +25,11 @@ def calculate_metrics(execution_order, initial_head):
         "ssd_time": float(f"{ssd_time:.2f}")
     }
 
-def fcfs(queue, initial_head, disk_size):
+def fcfs(queue, initial_head, disk_size: int):
     execution_order = queue.copy()
     return calculate_metrics(execution_order, initial_head)
 
-def sstf(queue, initial_head, disk_size):
+def sstf(queue, initial_head, disk_size: int):
     unvisited = queue.copy()
     execution_order = []
     current_head = initial_head
@@ -42,7 +42,7 @@ def sstf(queue, initial_head, disk_size):
         
     return calculate_metrics(execution_order, initial_head)
 
-def scan(queue, initial_head, disk_size):
+def scan(queue, initial_head, disk_size: int):
     # Standard SCAN: go towards higher cylinder (up), then down.
     execution_order = []
     left = [x for x in queue if x < initial_head]
@@ -69,7 +69,7 @@ def scan(queue, initial_head, disk_size):
             
     return calculate_metrics(execution_order, initial_head)
 
-def c_scan(queue, initial_head, disk_size):
+def c_scan(queue, initial_head, disk_size: int):
     # C-SCAN: go towards higher cylinder, jump to 0, then go up again.
     execution_order = []
     left = [x for x in queue if x < initial_head]
@@ -92,7 +92,7 @@ def c_scan(queue, initial_head, disk_size):
             
     return calculate_metrics(execution_order, initial_head)
 
-def look(queue, initial_head, disk_size):
+def look(queue, initial_head, disk_size: int):
     execution_order = []
     left = [x for x in queue if x < initial_head]
     right = [x for x in queue if x >= initial_head]
@@ -110,7 +110,7 @@ def look(queue, initial_head, disk_size):
             
     return calculate_metrics(execution_order, initial_head)
 
-def c_look(queue, initial_head, disk_size):
+def c_look(queue, initial_head, disk_size: int):
     execution_order = []
     left = [x for x in queue if x < initial_head]
     right = [x for x in queue if x >= initial_head]
@@ -128,7 +128,7 @@ def c_look(queue, initial_head, disk_size):
             
     return calculate_metrics(execution_order, initial_head)
 
-def n_step_scan(queue, initial_head, disk_size, n=10):
+def n_step_scan(queue, initial_head: int, disk_size: int, n: int = 10):
     execution_order = []
     current_head = initial_head
     
@@ -147,9 +147,9 @@ def n_step_scan(queue, initial_head, disk_size, n=10):
             current_head = req
             
         if left:
-            if not execution_order or execution_order[-1] != disk_size - 1:
-                execution_order.append(disk_size - 1)
-                current_head = disk_size - 1
+            if not execution_order or execution_order[-1] != int(disk_size) - 1:
+                execution_order.append(int(disk_size) - 1)
+                current_head = int(disk_size) - 1
                 
             for req in left:
                 execution_order.append(req)
@@ -157,7 +157,7 @@ def n_step_scan(queue, initial_head, disk_size, n=10):
 
     return calculate_metrics(execution_order, initial_head)
 
-def f_scan(queue, initial_head, disk_size):
+def f_scan(queue, initial_head, disk_size: int):
     # F-SCAN splits requests into two queues. 
     # For a static initial queue, it acts like a single N-Step SCAN 
     # where N is the total number of initial requests.
