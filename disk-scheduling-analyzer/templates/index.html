@@ -46,14 +46,23 @@
                 <div class="form-group">
                     <label>Algorithms to Compare</label>
                     <div class="checkbox-grid">
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="FCFS" checked> FCFS</label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SSTF" checked> SSTF</label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SCAN" checked> SCAN</label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="C-SCAN" checked> C-SCAN</label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="FCFS" checked> FCFS <span class="info-icon" onclick="showInfo('FCFS', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SSTF" checked> SSTF <span class="info-icon" onclick="showInfo('SSTF', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SCAN" checked> SCAN <span class="info-icon" onclick="showInfo('SCAN', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="C-SCAN" checked> C-SCAN <span class="info-icon" onclick="showInfo('C-SCAN', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="LOOK" checked> LOOK <span class="info-icon" onclick="showInfo('LOOK', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="C-LOOK" checked> C-LOOK <span class="info-icon" onclick="showInfo('C-LOOK', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="N-STEP SCAN" checked> N-STEP <span class="info-icon" onclick="showInfo('N-STEP SCAN', event)">ⓘ</span></label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="F-SCAN" checked> F-SCAN <span class="info-icon" onclick="showInfo('F-SCAN', event)">ⓘ</span></label>
                     </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block">Run Simulation</button>
+                
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Performance Experiment</label>
+                    <button type="button" class="btn btn-secondary btn-block" onclick="runExperiment()" id="expBtn" style="width: 100%;">Run Scalability Tests (10/50/100/500)</button>
+                </div>
             </form>
         </aside>
 
@@ -98,13 +107,18 @@
                     </div>
                 </div>
 
-                <!-- Charts -->
                 <div class="card chart-card">
                     <div class="card-header">
-                        <h3>Head Movement Order</h3>
+                        <h3>Head Movement Order (Step-by-Step)</h3>
                     </div>
                     <div class="chart-container">
                         <canvas id="lineChart"></canvas>
+                    </div>
+                    <div class="playback-controls">
+                        <button type="button" class="btn btn-secondary btn-sm" id="prevStepBtn" disabled>⏪ Prev</button>
+                        <span id="stepCounter">Step: 0 / 0</span>
+                        <button type="button" class="btn btn-secondary btn-sm" id="nextStepBtn" disabled>Next ➔</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="playAutoBtn" disabled>▶ Play</button>
                     </div>
                 </div>
 
@@ -116,8 +130,71 @@
                         <canvas id="barChart"></canvas>
                     </div>
                 </div>
+                
+                <!-- Experiment Results Table -->
+                <div class="card table-card col-span-2" id="experimentCard" style="display: none;">
+                    <div class="card-header">
+                        <h3>Scalability Experiment: Average Seek Time (ms)</h3>
+                    </div>
+                    <div class="table-container">
+                        <table id="experimentTable">
+                            <thead>
+                                <tr>
+                                    <th>Requests</th>
+                                    <th>FCFS</th>
+                                    <th>SSTF</th>
+                                    <th>SCAN</th>
+                                    <th>C-SCAN</th>
+                                    <th>LOOK</th>
+                                    <th>C-LOOK</th>
+                                    <th>N-STEP SCAN</th>
+                                    <th>F-SCAN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Educational Panels -->
+                <div class="card col-span-2">
+                    <div class="card-header">
+                        <h3>Operating System Concepts</h3>
+                    </div>
+                    <div class="theory-grid">
+                        <div class="theory-box">
+                            <h4>Disk Access Time Model</h4>
+                            <p class="formula">Access Time = Seek Time + Rotational Latency + Transfer Time</p>
+                            <p><strong>HDD:</strong> Performance heavily depends on moving the mechanical disk head. Scheduling algorithms aim to minimize <em>Seek Time</em>.</p>
+                            <p><strong>SSD:</strong> No moving parts! Access time is almost constant. Scheduling is mostly irrelevant for SSDs, which is why SSD times in our simulation scale linearly and identically regardless of the algorithm.</p>
+                        </div>
+                        <div class="theory-box">
+                            <h4>Algorithm Analysis</h4>
+                            <table class="simple-table">
+                                <tr><th>Algorithm</th><th>Time Complexity</th></tr>
+                                <tr><td>FCFS</td><td>O(n)</td></tr>
+                                <tr><td>SSTF</td><td>O(n²)</td></tr>
+                                <tr><td>SCAN / C-SCAN / LOOK / C-LOOK</td><td>O(n log n)</td></tr>
+                                <tr><td>N-STEP SCAN / F-SCAN</td><td>O(n log n)</td></tr>
+                            </table>
+                            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                Optimization Goal: <strong>Minimize total head movement</strong> and prevent starvation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
+    </div>
+
+    <!-- Algorithm Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Algorithm Name</h2>
+            <p id="modalDesc">Description goes here.</p>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

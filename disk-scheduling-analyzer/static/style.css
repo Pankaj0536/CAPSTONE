@@ -352,3 +352,151 @@ tr:hover td {
         padding: 2rem;
     }
 }
+
+/* Info Icon */
+.info-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    font-size: 11px;
+    margin-left: auto;
+    transition: all 0.2s;
+}
+
+.info-icon:hover {
+    background: var(--accent-primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Playback Controls */
+.playback-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 8px;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+#stepCounter {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--accent-primary);
+    min-width: 100px;
+    text-align: center;
+}
+
+/* Theory Grid & Panels */
+.theory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.theory-box {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.theory-box h4 {
+    color: var(--accent-secondary);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.theory-box p {
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.formula {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.75rem;
+    border-radius: 4px;
+    font-family: monospace;
+    color: var(--accent-primary);
+    border-left: 3px solid var(--accent-primary);
+}
+
+.simple-table {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.simple-table th, .simple-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.simple-table th {
+    text-align: left;
+    color: var(--text-secondary);
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: var(--shadow-main);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content h2 {
+    color: var(--accent-primary);
+    margin-bottom: 1rem;
+}
+
+.modal-content p {
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.close-modal {
+    position: absolute;
+    right: 1.5rem;
+    top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.close-modal:hover {
+    color: white;
+}

@@ -91,3 +91,74 @@ def c_scan(queue, initial_head, disk_size):
             execution_order.append(req)
             
     return calculate_metrics(execution_order, initial_head)
+
+def look(queue, initial_head, disk_size):
+    execution_order = []
+    left = [x for x in queue if x < initial_head]
+    right = [x for x in queue if x >= initial_head]
+    
+    left.sort(reverse=True)
+    right.sort()
+    
+    # Go right first
+    for req in right:
+        execution_order.append(req)
+        
+    # Then go left (no jumping to end of disk)
+    for req in left:
+        execution_order.append(req)
+            
+    return calculate_metrics(execution_order, initial_head)
+
+def c_look(queue, initial_head, disk_size):
+    execution_order = []
+    left = [x for x in queue if x < initial_head]
+    right = [x for x in queue if x >= initial_head]
+    
+    left.sort()
+    right.sort()
+    
+    # Go right first
+    for req in right:
+        execution_order.append(req)
+        
+    # Jump to lowest request and go right again
+    for req in left:
+        execution_order.append(req)
+            
+    return calculate_metrics(execution_order, initial_head)
+
+def n_step_scan(queue, initial_head, disk_size, n=10):
+    execution_order = []
+    current_head = initial_head
+    
+    # Split queue into chunks of size N
+    for i in range(0, len(queue), n):
+        chunk = queue[i:i+n]
+        left = [x for x in chunk if x < current_head]
+        right = [x for x in chunk if x >= current_head]
+        
+        left.sort(reverse=True)
+        right.sort()
+        
+        # SCAN logic for this chunk
+        for req in right:
+            execution_order.append(req)
+            current_head = req
+            
+        if left:
+            if not execution_order or execution_order[-1] != disk_size - 1:
+                execution_order.append(disk_size - 1)
+                current_head = disk_size - 1
+                
+            for req in left:
+                execution_order.append(req)
+                current_head = req
+
+    return calculate_metrics(execution_order, initial_head)
+
+def f_scan(queue, initial_head, disk_size):
+    # F-SCAN splits requests into two queues. 
+    # For a static initial queue, it acts like a single N-Step SCAN 
+    # where N is the total number of initial requests.
+    return scan(queue, initial_head, disk_size)
