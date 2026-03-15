@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSD vs HDD Disk Scheduling Performance Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Input Panel -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>Disk Analyzer</h2>
+                <div class="badge">Pro</div>
+            </div>
+
+            <form id="inputForm" class="control-panel">
+                <div class="form-group">
+                    <label for="queue">Disk Request Queue</label>
+                    <textarea id="queue" placeholder="98, 183, 37, 122, 14, 124, 65, 67" required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="initialHead">Initial Head</label>
+                        <input type="number" id="initialHead" value="53" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="diskSize">Disk Size</label>
+                        <input type="number" id="diskSize" value="200" required>
+                    </div>
+                </div>
+
+                <div class="generator-group">
+                    <label>Generate Random Workload</label>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateRequests(10)">10 Req</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateRequests(50)">50 Req</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateRequests(100)">100 Req</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Algorithms to Compare</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="FCFS" checked> FCFS</label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SSTF" checked> SSTF</label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SCAN" checked> SCAN</label>
+                        <label class="checkbox-label"><input type="checkbox" name="algo" value="C-SCAN" checked> C-SCAN</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Run Simulation</button>
+            </form>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <h1>Simulation Results</h1>
+                <p>Compare performance and visualize head movement.</p>
+            </header>
+
+            <div class="results-grid">
+                <!-- Data Table -->
+                <div class="card table-card col-span-2">
+                    <div class="card-header">
+                        <h3>Performance Comparison</h3>
+                    </div>
+                    <div class="table-container">
+                        <table id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Head Movement</th>
+                                    <th>Avg Seek Time</th>
+                                    <th>HDD Time (ms)</th>
+                                    <th>SSD Time (ms)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" class="empty-state">Run a simulation to see results</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Execution Order Log -->
+                <div class="card log-card col-span-2">
+                    <div class="card-header">
+                        <h3>Execution Orders</h3>
+                    </div>
+                    <div class="log-container" id="executionLog">
+                        <p class="empty-state">No execution data available.</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Head Movement Order</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Algorithm Comparison (Total Head Movement)</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
