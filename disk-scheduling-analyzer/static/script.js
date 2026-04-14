@@ -1,357 +1,313 @@
-let lineChartInstance = null;
-let barChartInstance = null;
+const SSD_ACCESS_TIME_PER_REQUEST = 5;
+const SSD_BASE_TIME = 15;
+let movementChart = null;
+let comparisonChart = null;
 
-// Playback state
-let currentStep = 0;
-let maxSteps = 0;
-let playInterval = null;
-let globalData = {};
-let globalAlgos = [];
+function initMenu() {
+    const menuWrap = document.querySelector('.menu-wrap');
+    const menuTrigger = document.querySelector('.menu-trigger');
 
-const chartColors = {
-    'FCFS': '#3B82F6', 
-    'SSTF': '#8B5CF6', 
-    'SCAN': '#10B981', 
-    'C-SCAN': '#F59E0B',
-    'LOOK': '#EC4899',
-    'C-LOOK': '#EF4444',
-    'N-STEP SCAN': '#06B6D4',
-    'F-SCAN': '#14B8A6'
-};
+    if (!menuWrap || !menuTrigger) return;
 
-// Global Chart settings
-Chart.defaults.color = '#94A3B8';
-Chart.defaults.font.family = 'Inter';
+    menuTrigger.addEventListener('click', event => {
+        event.stopPropagation();
+        menuWrap.classList.toggle('open');
+    });
 
-document.getElementById('inputForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const queue = document.getElementById('queue').value;
-    const initial_head = document.getElementById('initialHead').value;
-    const disk_size = document.getElementById('diskSize').value;
-    
-    // Get checked algorithms
-    const algoCheckboxes = document.querySelectorAll('input[name="algo"]:checked');
-    const algorithms = Array.from(algoCheckboxes).map(cb => cb.value);
-    
-    if (algorithms.length === 0) {
-        alert("Please select at least one algorithm to run.");
-        return;
+    document.addEventListener('click', () => {
+        menuWrap.classList.remove('open');
+    });
+
+    menuWrap.addEventListener('click', event => {
+        event.stopPropagation();
+    });
+}
+
+function animateHddAccess() {
+    const diskScene = document.querySelector('.disk-scene');
+    if (!diskScene) return;
+
+    diskScene.classList.add('active');
+    setTimeout(() => diskScene.classList.remove('active'), 1400);
+}
+
+function animateSsdAccess() {
+    const blocks = Array.from(document.querySelectorAll('.ssd-grid .block'));
+    if (!blocks.length) return;
+
+    blocks.forEach((block, index) => {
+        setTimeout(() => {
+            block.classList.add('active', 'pulse');
+            setTimeout(() => block.classList.remove('active'), 300);
+            setTimeout(() => block.classList.remove('pulse'), 500);
+        }, index * 80);
+    });
+}
+
+function setupDemoButtons() {
+    const hddBtn = document.getElementById('hdd-access-btn');
+    const ssdBtn = document.getElementById('ssd-access-btn');
+
+    if (hddBtn) hddBtn.addEventListener('click', animateHddAccess);
+    if (ssdBtn) ssdBtn.addEventListener('click', animateSsdAccess);
+}
+
+function generateSSDGrid() {
+    const grid = document.querySelector('.ssd-grid');
+    if (!grid || grid.children.length) return;
+
+    for (let i = 0; i < 12; i += 1) {
+        const block = document.createElement('div');
+        block.className = 'block';
+        grid.appendChild(block);
     }
-    
-    // Animate button state
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerText;
-    submitBtn.innerText = 'Simulating...';
-    submitBtn.style.opacity = '0.7';
+}
 
-    try {
-        const response = await fetch('/run_simulation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                queue,
-                initial_head,
-                disk_size,
-                algorithms
-            })
-        });
-        
-        const data = await response.json();
-        updateUI(data, Object.keys(data));
-    } catch (error) {
-        console.error("Error running simulation:", error);
-        alert("An error occurred during simulation.");
-    } finally {
-        submitBtn.innerText = originalText;
-        submitBtn.style.opacity = '1';
-    }
-});
+function parseRequests(raw) {
+    return raw
+        .split(',')
+        .map(item => Number(item.trim()))
+        .filter(value => Number.isFinite(value) && value >= 0);
+}
 
-async function generateRequests(count) {
-    const diskSize = document.getElementById('diskSize').value || 200;
-    
-    try {
-        const response = await fetch('/generate_requests', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                count,
-                disk_size: diskSize
-            })
-        });
-        
-        const data = await response.json();
-        if (data.requests) {
-            document.getElementById('queue').value = data.requests.join(', ');
-            
-            // Add a brief animation to the text area to show it was updated
-            const ta = document.getElementById('queue');
-            ta.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-            setTimeout(() => {
-                ta.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
-            }, 300);
+function computeSeekPath(initialHead, requestOrder) {
+    let total = 0;
+    let current = initialHead;
+    const path = [initialHead];
+
+    requestOrder.forEach(next => {
+        total += Math.abs(next - current);
+        path.push(next);
+        current = next;
+    });
+
+    return { totalSeek: total, steps: path };
+}
+
+function runFCFS(initialHead, requests) {
+    return computeSeekPath(initialHead, [...requests]);
+}
+
+function runSSTF(initialHead, requests) {
+    const pending = [...requests];
+    let current = initialHead;
+    const order = [];
+
+    while (pending.length > 0) {
+        let bestIndex = 0;
+        let bestDistance = Math.abs(pending[0] - current);
+
+        for (let i = 1; i < pending.length; i += 1) {
+            const distance = Math.abs(pending[i] - current);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
         }
-    } catch (error) {
-        console.error("Error generating requests:", error);
+
+        const next = pending.splice(bestIndex, 1)[0];
+        order.push(next);
+        current = next;
     }
+
+    return computeSeekPath(initialHead, order);
 }
 
-function updateUI(data, algorithms) {
-    updateTable(data, algorithms);
-    updateExecutionLog(data, algorithms);
-    
-    globalData = data;
-    globalAlgos = algorithms;
-    maxSteps = Math.max(...algorithms.map(algo => data[algo].execution_order.length));
-    currentStep = maxSteps;
-    
-    renderLineChartStep();
-    renderBarChart(data, algorithms);
-    updatePlaybackControls();
+function runSCAN(initialHead, requests) {
+    const upRequests = requests.filter(value => value >= initialHead).sort((a, b) => a - b);
+    const downRequests = requests.filter(value => value < initialHead).sort((a, b) => b - a);
+    return computeSeekPath(initialHead, [...upRequests, ...downRequests]);
 }
 
-function updateTable(data, algorithms) {
-    const tbody = document.querySelector('#resultsTable tbody');
-    tbody.innerHTML = '';
-    
-    algorithms.forEach(algo => {
-        const result = data[algo];
-        const tr = document.createElement('tr');
-        
-        tr.innerHTML = `
-            <td><strong>${algo}</strong></td>
-            <td>${result.total_head_movement}</td>
-            <td>${result.average_seek_time.toFixed(2)} ms</td>
-            <td>${result.hdd_time.toFixed(2)}</td>
-            <td><span style="color: #10B981; font-weight: 600;">${result.ssd_time.toFixed(2)}</span></td>
+function renderAlgorithmCards(results) {
+    const container = document.getElementById('algorithmCards');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const bestAlgorithm = ['FCFS', 'SSTF', 'SCAN'].reduce((best, algo) => {
+        if (!best || results[algo].totalSeek < results[best].totalSeek) return algo;
+        return best;
+    }, 'FCFS');
+
+    Object.keys(results).forEach(algo => {
+        const result = results[algo];
+        if (!result) return;
+
+        const card = document.createElement('div');
+        card.className = 'algo-card';
+        if (algo === bestAlgorithm) card.classList.add('best');
+
+        card.innerHTML = `
+            <h4>${algo}</h4>
+            <p>${algo === 'SSD' ? 'Constant storage access' : 'HDD seek path'}</p>
+            <div><strong>HDD seek:</strong> ${result.totalSeek.toFixed(1)}</div>
+            <div><strong>SSD time:</strong> ${result.ssdTime.toFixed(1)} ms</div>
+            <div class="path-list">${result.steps.slice(0, 8).map(value => `<span class="path-pill">${value}</span>`).join('')}</div>
         `;
-        
-        tbody.appendChild(tr);
+
+        container.appendChild(card);
     });
 }
 
-function updateExecutionLog(data, algorithms) {
-    const logContainer = document.getElementById('executionLog');
-    logContainer.innerHTML = '';
-    
-    algorithms.forEach(algo => {
-        const order = data[algo].execution_order;
-        const div = document.createElement('div');
-        div.className = 'log-item';
-        
-        // Convert to arrow separated string
-        // The first element is the initial head (actually the first request, we need to show transition from initial head)
-        // Let's get initial head from input
-        const initialHead = document.getElementById('initialHead').value;
-        const fullSequence = [initialHead, ...order].join(' → ');
-        
-        div.innerHTML = `
-            <h4>${algo} Order:</h4>
-            <div class="log-sequence">${fullSequence}</div>
-        `;
-        
-        logContainer.appendChild(div);
-    });
+function renderComparisonTable(results) {
+    const body = document.getElementById('comparisonTableBody');
+    if (!body) return;
+
+    body.innerHTML = ['FCFS', 'SSTF', 'SCAN'].map(algo => {
+        const result = results[algo];
+        if (!result) return '';
+        return `
+            <tr>
+                <td>${algo}</td>
+                <td>${result.totalSeek.toFixed(1)}</td>
+                <td>${result.ssdTime.toFixed(1)} ms</td>
+            </tr>`;
+    }).join('');
 }
 
-function renderLineChartStep() {
-    const ctx = document.getElementById('lineChart').getContext('2d');
-    if (lineChartInstance) lineChartInstance.destroy();
-    
-    const initialHead = parseInt(document.getElementById('initialHead').value);
-    const diskSize = parseInt(document.getElementById('diskSize').value);
-    
-    const datasets = globalAlgos.map(algo => {
-        const fullOrder = [initialHead, ...globalData[algo].execution_order];
-        const currentOrder = fullOrder.slice(0, currentStep + 1);
-        
-        return {
-            label: algo,
-            data: currentOrder.map((cyl, index) => ({ x: cyl, y: index })),
-            borderColor: chartColors[algo] || '#ffffff',
-            backgroundColor: chartColors[algo] || '#ffffff',
-            borderWidth: 2,
-            tension: 0.1,
-            pointRadius: 4,
-            pointHoverRadius: 6
-        };
-    });
-    
-    lineChartInstance = new Chart(ctx, {
+function renderMovementChart(results) {
+    const canvas = document.getElementById('movementChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (movementChart) movementChart.destroy();
+
+    movementChart = new Chart(ctx, {
         type: 'line',
-        data: { datasets: datasets },
+        data: {
+            datasets: ['FCFS', 'SSTF', 'SCAN'].map((algo, idx) => ({
+                label: algo,
+                data: results[algo].steps.map((value, step) => ({ x: step, y: value })),
+                borderColor: ['#22c55e', '#3b82f6', '#a855f7'][idx],
+                backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'][idx],
+                tension: 0.3,
+                pointRadius: 4,
+                fill: false,
+                borderWidth: 2
+            }))
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                x: {
-                    type: 'linear',
-                    title: { display: true, text: 'Track / Cylinder' },
-                    min: 0,
-                    max: diskSize - 1
-                },
-                y: {
-                    title: { display: true, text: 'Request Sequence Step' },
-                    reverse: true,
-                    min: 0,
-                    max: maxSteps,
-                    ticks: { stepSize: 1 }
-                }
-            },
             plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: Track ${context.parsed.x}`;
-                        }
-                    }
-                }
+                legend: { labels: { color: '#475569' } }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Step', color: '#64748b' }, ticks: { color: '#64748b' } },
+                y: { title: { display: true, text: 'Track Position', color: '#64748b' }, ticks: { color: '#64748b' } }
             }
         }
     });
 }
 
-function renderBarChart(data, algorithms) {
-    const ctx = document.getElementById('barChart').getContext('2d');
-    if (barChartInstance) barChartInstance.destroy();
-    
-    const headMovements = algorithms.map(algo => data[algo].total_head_movement);
-    const bgColors = algorithms.map(algo => chartColors[algo] || '#ffffff');
-    
-    barChartInstance = new Chart(ctx, {
+function renderComparisonChart(results, ssdTime) {
+    const canvas = document.getElementById('comparisonChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (comparisonChart) comparisonChart.destroy();
+
+    comparisonChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: algorithms,
+            labels: ['FCFS', 'SSTF', 'SCAN', 'SSD'],
             datasets: [{
-                label: 'Total Head Movement',
-                data: headMovements,
-                backgroundColor: bgColors,
-                borderRadius: 6
+                label: 'HDD seek vs SSD access',
+                data: ['FCFS', 'SSTF', 'SCAN'].map(algo => results[algo].totalSeek).concat(ssdTime),
+                backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f97316'],
+                borderRadius: 12
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Head Movement (Tracks)' }
-                }
-            },
-            plugins: { legend: { display: false } }
+                y: { beginAtZero: true, title: { display: true, text: 'Effective Value', color: '#64748b' }, ticks: { color: '#64748b' } },
+                x: { ticks: { color: '#64748b' } }
+            }
         }
     });
 }
 
-// ---- Playback Controls ----
-function updatePlaybackControls() {
-    document.getElementById('stepCounter').innerText = `Step: ${currentStep} / ${maxSteps}`;
-    document.getElementById('prevStepBtn').disabled = currentStep === 0;
-    document.getElementById('nextStepBtn').disabled = currentStep === maxSteps;
-    document.getElementById('playAutoBtn').disabled = maxSteps === 0;
-    
-    if (currentStep === maxSteps && playInterval) {
-        clearInterval(playInterval);
-        playInterval = null;
-        document.getElementById('playAutoBtn').innerText = '▶ Play';
+function runSimulation() {
+    const requestInput = document.getElementById('requestInput');
+    const headInput = document.getElementById('headInput');
+    if (!requestInput || !headInput) return;
+
+    const requests = parseRequests(requestInput.value);
+    const initialHead = Number(headInput.value);
+
+    if (!requests.length || !Number.isFinite(initialHead) || initialHead < 0) {
+        alert('Please enter valid disk requests and initial head position.');
+        return;
+    }
+
+    const fcfs = runFCFS(initialHead, requests);
+    const sstf = runSSTF(initialHead, requests);
+    const scan = runSCAN(initialHead, requests);
+    const ssdTime = SSD_BASE_TIME + requests.length * SSD_ACCESS_TIME_PER_REQUEST;
+
+    const results = {
+        FCFS: { ...fcfs, ssdTime },
+        SSTF: { ...sstf, ssdTime },
+        SCAN: { ...scan, ssdTime },
+        SSD: { totalSeek: 0, ssdTime, steps: [initialHead] }
+    };
+
+    const best = ['FCFS', 'SSTF', 'SCAN'].reduce((winner, algo) => results[algo].totalSeek < results[winner].totalSeek ? algo : winner, 'FCFS');
+    const status = document.getElementById('resultStatus');
+    const bestLabel = document.getElementById('bestAlgo');
+    if (status) status.textContent = `Simulation complete. Best scheduler: ${best}.`;
+    if (bestLabel) bestLabel.textContent = best;
+
+    renderAlgorithmCards(results);
+    renderComparisonTable(results);
+    renderMovementChart(results);
+    renderComparisonChart(results, ssdTime);
+}
+
+function resetSimulator() {
+    const requestInput = document.getElementById('requestInput');
+    const headInput = document.getElementById('headInput');
+    const maxTrackInput = document.getElementById('maxTrackInput');
+    const status = document.getElementById('resultStatus');
+    const bestLabel = document.getElementById('bestAlgo');
+    const comparisonBody = document.getElementById('comparisonTableBody');
+    const cards = document.getElementById('algorithmCards');
+
+    if (requestInput) requestInput.value = '10, 50, 90, 30, 70';
+    if (headInput) headInput.value = '35';
+    if (maxTrackInput) maxTrackInput.value = '199';
+    if (status) status.textContent = 'Run simulation to review algorithm results.';
+    if (bestLabel) bestLabel.textContent = 'N/A';
+    if (comparisonBody) comparisonBody.innerHTML = '<tr><td colspan="3" style="color: var(--muted); text-align:center;">No simulation yet.</td></tr>';
+    if (cards) cards.innerHTML = '<div class="algo-card">Run the simulation to populate algorithm cards.</div>';
+
+    if (movementChart) {
+        movementChart.destroy();
+        movementChart = null;
+    }
+    if (comparisonChart) {
+        comparisonChart.destroy();
+        comparisonChart = null;
     }
 }
 
-document.getElementById('prevStepBtn').addEventListener('click', () => {
-    if (currentStep > 0) {
-        currentStep--;
-        renderLineChartStep();
-        updatePlaybackControls();
-    }
-});
+function attachEvents() {
+    initMenu();
+    setupDemoButtons();
+    generateSSDGrid();
 
-document.getElementById('nextStepBtn').addEventListener('click', () => {
-    if (currentStep < maxSteps) {
-        currentStep++;
-        renderLineChartStep();
-        updatePlaybackControls();
-    }
-});
+    const runSimulatorBtn = document.getElementById('runSimulatorBtn');
+    const resetSimulatorBtn = document.getElementById('resetSimulatorBtn');
 
-document.getElementById('playAutoBtn').addEventListener('click', (e) => {
-    const btn = e.target;
-    if (playInterval) {
-        clearInterval(playInterval);
-        playInterval = null;
-        btn.innerText = '▶ Play';
-    } else {
-        if (currentStep === maxSteps) currentStep = 0;
-        btn.innerText = '⏸ Pause';
-        playInterval = setInterval(() => {
-            if (currentStep < maxSteps) {
-                currentStep++;
-                renderLineChartStep();
-                updatePlaybackControls();
-            }
-        }, 800);
-    }
-});
-
-// ---- Experiment Mode ----
-async function runExperiment() {
-    const btn = document.getElementById('expBtn');
-    const originalText = btn.innerText;
-    btn.innerText = 'Running Tests...';
-    btn.disabled = true;
-
-    try {
-        const disk_size = document.getElementById('diskSize').value;
-        const initial_head = document.getElementById('initialHead').value;
-        
-        const response = await fetch('/run_experiment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                counts: [10, 50, 100, 500],
-                disk_size: disk_size,
-                initial_head: initial_head
-            })
-        });
-        
-        const data = await response.json();
-        
-        const tbody = document.querySelector('#experimentTable tbody');
-        tbody.innerHTML = '';
-        
-        [10, 50, 100, 500].forEach(count => {
-            if(!data[count]) return;
-            const res = data[count];
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${count}</strong></td>
-                <td>${res['FCFS'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['SSTF'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['SCAN'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['C-SCAN'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['LOOK'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['C-LOOK'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['N-STEP SCAN'].average_seek_time.toFixed(2)} ms</td>
-                <td>${res['F-SCAN'].average_seek_time.toFixed(2)} ms</td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        document.getElementById('experimentCard').style.display = 'block';
-        document.getElementById('experimentCard').scrollIntoView({ behavior: 'smooth' });
-        
-    } catch (error) {
-        console.error("Experiment failed", error);
-        alert("Experiment failed to run.");
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
-    }
+    if (runSimulatorBtn) runSimulatorBtn.addEventListener('click', runSimulation);
+    if (resetSimulatorBtn) resetSimulatorBtn.addEventListener('click', resetSimulator);
 }
+
+document.addEventListener('DOMContentLoaded', attachEvents);
 
 // ---- Info Modal ----
 const algoDescriptions = {
@@ -382,4 +338,4 @@ window.onclick = function(event) {
     if (event.target === modal) {
         closeModal();
     }
-}
+};

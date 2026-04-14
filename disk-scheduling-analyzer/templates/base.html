@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Storage Hub{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="topbar">
+            <div class="brand-row menu-wrap">
+                <button class="menu-trigger" aria-haspopup="true" aria-expanded="false">•••</button>
+                <div class="menu-panel" role="menu">
+                    <a href="{{ url_for('index') }}" role="menuitem">Home</a>
+                    <a href="{{ url_for('options') }}" role="menuitem">Learning</a>
+                    <a href="{{ url_for('ssd_vs_hdd') }}" role="menuitem">Performance</a>
+                </div>
+                <div>
+                    <h2>SeekAnalyser</h2>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="icon-btn" aria-label="Settings">⚙️</button>
+                <button class="icon-btn" aria-label="User profile">👤</button>
+            </div>
+        </header>
+        <main class="main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <div class="background-glow"></div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

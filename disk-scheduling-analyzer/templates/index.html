@@ -1,202 +1,158 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSD vs HDD Disk Scheduling Performance Analyzer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="dashboard-container">
-        <!-- Sidebar Input Panel -->
-        <aside class="sidebar">
-            <div class="logo">
-                <h2>Disk Analyzer</h2>
-                <div class="badge">Pro</div>
-            </div>
+﻿{% extends "base.html" %}
 
-            <form id="inputForm" class="control-panel">
-                <div class="form-group">
-                    <label for="queue">Disk Request Queue</label>
-                    <textarea id="queue" placeholder="98, 183, 37, 122, 14, 124, 65, 67" required></textarea>
-                </div>
+{% block title %}SeekAnalyser Home{% endblock %}
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="initialHead">Initial Head</label>
-                        <input type="number" id="initialHead" value="53" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="diskSize">Disk Size</label>
-                        <input type="number" id="diskSize" value="200" required>
-                    </div>
-                </div>
+{% block content %}
 
-                <div class="generator-group">
-                    <label>Generate Random Workload</label>
-                    <div class="button-group">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateRequests(10)">10 Req</button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateRequests(50)">50 Req</button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateRequests(100)">100 Req</button>
-                    </div>
-                </div>
+<section class="hero-section" style="
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:80px 20px;
+">
 
-                <div class="form-group">
-                    <label>Algorithms to Compare</label>
-                    <div class="checkbox-grid">
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="FCFS" checked> FCFS <span class="info-icon" onclick="showInfo('FCFS', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SSTF" checked> SSTF <span class="info-icon" onclick="showInfo('SSTF', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="SCAN" checked> SCAN <span class="info-icon" onclick="showInfo('SCAN', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="C-SCAN" checked> C-SCAN <span class="info-icon" onclick="showInfo('C-SCAN', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="LOOK" checked> LOOK <span class="info-icon" onclick="showInfo('LOOK', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="C-LOOK" checked> C-LOOK <span class="info-icon" onclick="showInfo('C-LOOK', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="N-STEP SCAN" checked> N-STEP <span class="info-icon" onclick="showInfo('N-STEP SCAN', event)">ⓘ</span></label>
-                        <label class="checkbox-label"><input type="checkbox" name="algo" value="F-SCAN" checked> F-SCAN <span class="info-icon" onclick="showInfo('F-SCAN', event)">ⓘ</span></label>
-                    </div>
-                </div>
+    <div class="hero-panel glass-card" style="
+        width:85%;
+        max-width:850px;
+        padding:45px;
+        border-radius:18px;
+        background: rgba(218, 15, 15, 0.05);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 40px rgba(46, 2, 239, 0.2);
+    ">
 
-                <button type="submit" class="btn btn-primary btn-block">Run Simulation</button>
-                
-                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                    <label style="display: block; margin-bottom: 0.5rem;">Performance Experiment</label>
-                    <button type="button" class="btn btn-secondary btn-block" onclick="runExperiment()" id="expBtn" style="width: 100%;">Run Scalability Tests (10/50/100/500)</button>
-                </div>
-            </form>
-        </aside>
+        <!-- 🔥 Animated Title -->
+        <h1 style="
+            font-size:34px;
+            font-weight:700;
+            margin-bottom:22px;
+            line-height:1.3;
+            overflow:hidden;
+            white-space:nowrap;
+            border-right: 3px solid #3b82f6;
+            width: 0;
+            animation: typing 3s steps(30, end) forwards, blink 0.7s infinite;
+        ">
+            Welcome to <span style="color:#3b82f6;">SeekAnalyser</span>
+        </h1>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <header>
-                <h1>Simulation Results</h1>
-                <p>Compare performance and visualize head movement.</p>
-            </header>
+        <div style="display:flex; flex-direction:column; gap:15px;">
 
-            <div class="results-grid">
-                <!-- Data Table -->
-                <div class="card table-card col-span-2">
-                    <div class="card-header">
-                        <h3>Performance Comparison</h3>
-                    </div>
-                    <div class="table-container">
-                        <table id="resultsTable">
-                            <thead>
-                                <tr>
-                                    <th>Algorithm</th>
-                                    <th>Head Movement</th>
-                                    <th>Avg Seek Time</th>
-                                    <th>HDD Time (ms)</th>
-                                    <th>SSD Time (ms)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="5" class="empty-state">Run a simulation to see results</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            
+            <a href="{{ url_for('options') }}" style="
+        width:100%;
+        text-align:center;
+        padding:12px 0;
+        border-radius:10px;
+        border:1px solid #0b0b0c;
+        color:#3b82f6;
+        text-decoration:none;
+        font-size:14px;
+        font-weight:500;
+        transition:0.3s;
+    "
+    onmouseover="this.style.boxShadow='0 0 15px #3b82f6'; this.style.transform='scale(1.03)'"
+    onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)'"
+    >
+    📘 Explore Learning
+</a>
+<a href="{{ url_for('ssd_vs_hdd') }}" style="
+    width:100%;
+    text-align:center;
+    padding:12px 0;
+    border-radius:10px;
+    background: linear-gradient(135deg, #151516, #08090c);
+    color:white;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:500;
+    transition:0.3s;
+"
+onmouseover="this.style.boxShadow='0 0 15px #3b82f6'; this.style.transform='scale(1.03)'"
+onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)'"
+>
+    🚀 Open Performance Lab
+</a>
 
-                <!-- Execution Order Log -->
-                <div class="card log-card col-span-2">
-                    <div class="card-header">
-                        <h3>Execution Orders</h3>
-                    </div>
-                    <div class="log-container" id="executionLog">
-                        <p class="empty-state">No execution data available.</p>
-                    </div>
-                </div>
-
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <h3>Head Movement Order (Step-by-Step)</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="lineChart"></canvas>
-                    </div>
-                    <div class="playback-controls">
-                        <button type="button" class="btn btn-secondary btn-sm" id="prevStepBtn" disabled>⏪ Prev</button>
-                        <span id="stepCounter">Step: 0 / 0</span>
-                        <button type="button" class="btn btn-secondary btn-sm" id="nextStepBtn" disabled>Next ➔</button>
-                        <button type="button" class="btn btn-primary btn-sm" id="playAutoBtn" disabled>▶ Play</button>
-                    </div>
-                </div>
-
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <h3>Algorithm Comparison (Total Head Movement)</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Experiment Results Table -->
-                <div class="card table-card col-span-2" id="experimentCard" style="display: none;">
-                    <div class="card-header">
-                        <h3>Scalability Experiment: Average Seek Time (ms)</h3>
-                    </div>
-                    <div class="table-container">
-                        <table id="experimentTable">
-                            <thead>
-                                <tr>
-                                    <th>Requests</th>
-                                    <th>FCFS</th>
-                                    <th>SSTF</th>
-                                    <th>SCAN</th>
-                                    <th>C-SCAN</th>
-                                    <th>LOOK</th>
-                                    <th>C-LOOK</th>
-                                    <th>N-STEP SCAN</th>
-                                    <th>F-SCAN</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Educational Panels -->
-                <div class="card col-span-2">
-                    <div class="card-header">
-                        <h3>Operating System Concepts</h3>
-                    </div>
-                    <div class="theory-grid">
-                        <div class="theory-box">
-                            <h4>Disk Access Time Model</h4>
-                            <p class="formula">Access Time = Seek Time + Rotational Latency + Transfer Time</p>
-                            <p><strong>HDD:</strong> Performance heavily depends on moving the mechanical disk head. Scheduling algorithms aim to minimize <em>Seek Time</em>.</p>
-                            <p><strong>SSD:</strong> No moving parts! Access time is almost constant. Scheduling is mostly irrelevant for SSDs, which is why SSD times in our simulation scale linearly and identically regardless of the algorithm.</p>
-                        </div>
-                        <div class="theory-box">
-                            <h4>Algorithm Analysis</h4>
-                            <table class="simple-table">
-                                <tr><th>Algorithm</th><th>Time Complexity</th></tr>
-                                <tr><td>FCFS</td><td>O(n)</td></tr>
-                                <tr><td>SSTF</td><td>O(n²)</td></tr>
-                                <tr><td>SCAN / C-SCAN / LOOK / C-LOOK</td><td>O(n log n)</td></tr>
-                                <tr><td>N-STEP SCAN / F-SCAN</td><td>O(n log n)</td></tr>
-                            </table>
-                            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-                                Optimization Goal: <strong>Minimize total head movement</strong> and prevent starvation.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+</div>
     </div>
 
-    <!-- Algorithm Info Modal -->
-    <div id="infoModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">Algorithm Name</h2>
-            <p id="modalDesc">Description goes here.</p>
-        </div>
-    </div>
+</section>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
-</html>
+<!-- 🔥 CSS -->
+<style>
+
+/* Typing Animation */
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink {
+    50% { border-color: transparent }
+}
+
+/* HDD Disk */
+.disk {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #666, #111);
+    animation: spin 2s linear infinite;
+    margin: auto;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* SSD Grid */
+.ssd-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 20px);
+    gap: 6px;
+}
+
+.ssd-block {
+    width: 20px;
+    height: 20px;
+    background: #0f172a;
+    border-radius: 4px;
+    border: 1px solid rgba(59,130,246,0.3);
+}
+
+/* Active Flash */
+.ssd-block.active {
+    background: #3b82f6;
+    box-shadow: 0 0 10px #3b82f6;
+}
+
+</style>
+
+<!-- 🔥 JS -->
+<script>
+
+// Create SSD blocks
+const grid = document.getElementById("ssdGrid");
+
+if (grid) {
+    for (let i = 0; i < 9; i++) {
+        let div = document.createElement("div");
+        div.classList.add("ssd-block");
+        grid.appendChild(div);
+    }
+
+    // Animate random access
+    setInterval(() => {
+        let blocks = document.querySelectorAll(".ssd-block");
+        blocks.forEach(b => b.classList.remove("active"));
+
+        let index = Math.floor(Math.random() * blocks.length);
+        blocks[index].classList.add("active");
+    }, 500);
+}
+
+</script>
+
+{% endblock %}
