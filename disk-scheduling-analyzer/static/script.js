@@ -4,49 +4,105 @@ let movementChart = null;
 let comparisonChart = null;
 
 function initMenu() {
-    const menuWrap = document.querySelector('.menu-wrap');
-    const menuTrigger = document.querySelector('.menu-trigger');
+    const menuWraps = document.querySelectorAll('.menu-wrap');
 
-    if (!menuWrap || !menuTrigger) return;
+    if (!menuWraps.length) return;
 
-    menuTrigger.addEventListener('click', event => {
-        event.stopPropagation();
-        menuWrap.classList.toggle('open');
+    menuWraps.forEach(menuWrap => {
+        const menuTrigger = menuWrap.querySelector('.menu-trigger, .user-menu-trigger');
+        if (!menuTrigger) return;
+
+        menuTrigger.addEventListener('click', event => {
+            event.stopPropagation();
+            // Close other open menus
+            menuWraps.forEach(other => {
+                if (other !== menuWrap) other.classList.remove('open');
+            });
+            menuWrap.classList.toggle('open');
+        });
+
+        menuWrap.addEventListener('click', event => {
+            event.stopPropagation();
+        });
     });
 
     document.addEventListener('click', () => {
-        menuWrap.classList.remove('open');
-    });
-
-    menuWrap.addEventListener('click', event => {
-        event.stopPropagation();
+        menuWraps.forEach(menuWrap => menuWrap.classList.remove('open'));
     });
 }
 
 function animateHddAccess() {
-    const diskScene = document.querySelector('.disk-scene');
-    if (!diskScene) return;
+    const diskScene = document.getElementById('hdd-scene');
+    const hddArm = document.getElementById('hdd-arm');
+    const status = document.getElementById('hdd-status');
+    const btn = document.getElementById('hdd-sim-btn');
+    if (!diskScene || !hddArm || !btn) return;
 
+    btn.disabled = true;
+    status.innerHTML = "Moving arm... (Mechanical Delay)";
+    status.style.color = "#ef4444";
     diskScene.classList.add('active');
-    setTimeout(() => diskScene.classList.remove('active'), 1400);
+    
+    const randomAngle = Math.floor(Math.random() * 45) + 20;
+    hddArm.style.transform = `translate(-10%, -50%) rotate(${randomAngle}deg)`;
+
+    setTimeout(() => {
+        diskScene.classList.remove('active');
+        status.innerHTML = "Data Access Complete!";
+        status.style.color = "#10b981";
+        btn.disabled = false;
+        
+        setTimeout(() => {
+            if (status.innerHTML === "Data Access Complete!") {
+                status.innerHTML = "";
+                hddArm.style.transform = `translate(-10%, -50%) rotate(25deg)`;
+            }
+        }, 1500);
+    }, 1500);
 }
 
 function animateSsdAccess() {
     const blocks = Array.from(document.querySelectorAll('.ssd-grid .block'));
-    if (!blocks.length) return;
+    const status = document.getElementById('ssd-status');
+    const btn = document.getElementById('ssd-sim-btn');
+    if (!blocks.length || !btn) return;
 
+    btn.disabled = true;
+    status.innerHTML = "Lighting up grids... ⚡";
+    status.style.color = "#3b82f6";
+    
+    // Clear previous
+    blocks.forEach(b => b.classList.remove('active', 'pulse'));
+    
+    // Light all blocks up sequentially one by one
     blocks.forEach((block, index) => {
         setTimeout(() => {
             block.classList.add('active', 'pulse');
-            setTimeout(() => block.classList.remove('active'), 300);
-            setTimeout(() => block.classList.remove('pulse'), 500);
-        }, index * 80);
+        }, index * 40); 
     });
+
+    const totalTime = blocks.length * 40 + 200;
+
+    // Final access state
+    setTimeout(() => {
+        status.innerHTML = "Loaded All Memory Instantly! ⚡";
+        status.style.color = "#10b981";
+        
+        setTimeout(() => {
+            btn.disabled = false;
+            setTimeout(() => {
+                if (status.innerHTML.includes("Instantly")) {
+                    status.innerHTML = "";
+                }
+                blocks.forEach(b => b.classList.remove('active', 'pulse'));
+            }, 1800);
+        }, 500);
+    }, totalTime);
 }
 
 function setupDemoButtons() {
-    const hddBtn = document.getElementById('hdd-access-btn');
-    const ssdBtn = document.getElementById('ssd-access-btn');
+    const hddBtn = document.getElementById('hdd-sim-btn');
+    const ssdBtn = document.getElementById('ssd-sim-btn');
 
     if (hddBtn) hddBtn.addEventListener('click', animateHddAccess);
     if (ssdBtn) ssdBtn.addEventListener('click', animateSsdAccess);
@@ -173,29 +229,61 @@ function renderMovementChart(results) {
 
     if (movementChart) movementChart.destroy();
 
+    const algorithmKeys = ['FCFS', 'SSTF', 'SCAN'];
+    const allValues = algorithmKeys.flatMap(algo => results[algo].steps);
+    const minTrack = Math.max(0, Math.min(...allValues) - 12);
+    const maxTrack = Math.max(...allValues) + 12;
+    const stepCount = Math.max(...algorithmKeys.map(algo => results[algo].steps.length));
+
     movementChart = new Chart(ctx, {
         type: 'line',
         data: {
-            datasets: ['FCFS', 'SSTF', 'SCAN'].map((algo, idx) => ({
+            datasets: algorithmKeys.map((algo, idx) => ({
                 label: algo,
                 data: results[algo].steps.map((value, step) => ({ x: step, y: value })),
                 borderColor: ['#22c55e', '#3b82f6', '#a855f7'][idx],
-                backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'][idx],
-                tension: 0.3,
-                pointRadius: 4,
-                fill: false,
-                borderWidth: 2
+                backgroundColor: ['rgba(34, 197, 94, 0.18)', 'rgba(59, 130, 246, 0.18)', 'rgba(168, 85, 247, 0.18)'][idx],
+                tension: 0.35,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: 'start',
+                borderWidth: 3,
+                spanGaps: true
             }))
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { labels: { color: '#475569' } }
+                legend: {
+                    labels: { color: '#475569', usePointStyle: true, boxWidth: 10 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: context => `${context.dataset.label}: Track ${context.parsed.y}`
+                    }
+                }
             },
             scales: {
-                x: { title: { display: true, text: 'Step', color: '#64748b' }, ticks: { color: '#64748b' } },
-                y: { title: { display: true, text: 'Track Position', color: '#64748b' }, ticks: { color: '#64748b' } }
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: 'Step', color: '#64748b' },
+                    min: 0,
+                    max: Math.max(stepCount - 1, 4),
+                    ticks: { color: '#64748b', stepSize: Math.max(1, Math.ceil(stepCount / 5)) },
+                    grid: { color: 'rgba(71, 85, 105, 0.08)' }
+                },
+                y: {
+                    min: minTrack,
+                    max: maxTrack,
+                    title: { display: true, text: 'Track position', color: '#64748b' },
+                    ticks: { color: '#64748b', stepSize: Math.max(10, Math.ceil((maxTrack - minTrack) / 5)) },
+                    grid: { color: 'rgba(71, 85, 105, 0.08)' }
+                }
+            },
+            elements: {
+                line: { borderJoinStyle: 'round', capBezierPoints: true },
+                point: { hoverBorderWidth: 2 }
             }
         }
     });

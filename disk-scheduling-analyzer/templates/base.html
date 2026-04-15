@@ -15,7 +15,7 @@
                 <button class="menu-trigger" aria-haspopup="true" aria-expanded="false">•••</button>
                 <div class="menu-panel" role="menu">
                     <a href="{{ url_for('index') }}" role="menuitem">Home</a>
-                    <a href="{{ url_for('options') }}" role="menuitem">Learning</a>
+                    <a href="{{ url_for('learning') }}" role="menuitem">Learning</a>
                     <a href="{{ url_for('ssd_vs_hdd') }}" role="menuitem">Performance</a>
                 </div>
                 <div>
@@ -24,7 +24,16 @@
             </div>
             <div class="topbar-right">
                 <button class="icon-btn" aria-label="Settings">⚙️</button>
-                <button class="icon-btn" aria-label="User profile">👤</button>
+                <div class="menu-wrap" style="position: relative;">
+                    <button class="icon-btn user-menu-trigger" aria-label="User profile" aria-haspopup="true" aria-expanded="false">👤</button>
+                    <div class="menu-panel" role="menu" style="right: 0; left: auto; top: calc(100% + 10px);">
+                        {% if session.get('logged_in') %}
+                            <a href="{{ url_for('logout') }}" role="menuitem">Logout</a>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" role="menuitem">Login</a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </header>
         <main class="main">
@@ -32,6 +41,6 @@
         </main>
     </div>
     <div class="background-glow"></div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=2"></script>
 </body>
 </html>

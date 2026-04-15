@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}How Storage Devices Work{% endblock %}
+
+{% block content %}
+<!-- SECTION 1: INTRODUCTION -->
+<section class="hero-section text-center">
+    <div class="glass-card hero-card intro-card" style="margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <span class="section-badge">Learning Module</span>
+        <h2 style="font-size: 2.5rem; margin-top: 1rem; margin-bottom: 1rem; color: var(--text);">How Storage Devices Work</h2>
+        <p style="font-size: 1.1rem; color: var(--muted); max-width: 700px; margin: 0 auto 2rem auto; line-height: 1.7;">
+            HDD (Hard Disk Drive) relies on physical spinning disks and moving magnetic heads to read data. 
+            SSD (Solid State Drive) uses integrated circuit assemblies (flash memory) to store data electronically.
+        </p>
+        
+        <div class="intro-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 700px; width: 100%; margin: 0 auto; text-align: left;">
+            <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--accent-strong);">
+                <strong>HDD Storage</strong>
+                <p style="color: var(--muted); margin-top: 0.5rem; margin-bottom: 0;">Mechanical storage with moving parts</p>
+            </div>
+            <div class="card" style="padding: 1.5rem; border-left: 4px solid #10b981;">
+                <strong>SSD Storage</strong>
+                <p style="color: var(--muted); margin-top: 0.5rem; margin-bottom: 0;">Electronic storage with zero moving parts</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="learning-downside section-gap">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div style="max-width: 720px;">
+            <span class="section-badge">Learning Downside</span>
+            <h3 style="margin-top: 1rem;">Why learning theory can feel hard first</h3>
+            <p style="color: var(--muted); line-height: 1.8; margin-top: 0.8rem;">
+                The concepts behind disk scheduling are powerful, but they also come with a few drawbacks when you’re still learning.
+            </p>
+            <ul style="margin-top: 1rem; color: var(--muted); padding-left: 1.25rem; line-height: 1.7;">
+                <li>It can feel abstract before you see a real performance simulation.</li>
+                <li>Too much theory at once may make it harder to remember how algorithms behave.</li>
+                <li>Performance depends on actual request patterns and hardware, not just the ideal model.</li>
+            </ul>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
+                <span class="downside-pill">Tradeoff</span>
+                <span class="downside-pill">Real world</span>
+                <span class="downside-pill">Practice first</span>
+            </div>
+        </div>
+        <div style="min-width: 220px; display: flex; align-items: center; justify-content: center;">
+            <a class="btn btn-glow" href="{{ url_for('ssd_vs_hdd') }}" style="width: 100%; max-width: 260px; text-align: center;">
+                ⚡ Open Performance Analyzer
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 2 & 3: ANIMATIONS -->
+<section class="hero-grid" style="margin-bottom: 2rem;">
+    <!-- HDD SECTION -->
+    <div class="card device-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Hard Disk Drive (HDD)</h3>
+            <span class="section-badge" style="background: rgba(37, 99, 235, 0.1);">Mechanical</span>
+        </div>
+        
+        <div class="disk-scene" id="hdd-scene" style="margin: 2rem auto;">
+            <div class="disk-plate"></div>
+            <div class="disk-track" style="position: absolute; inset: 25%; border: 1px dashed rgba(148, 163, 184, 0.4); border-radius: 50%;"></div>
+            <div class="disk-track" style="position: absolute; inset: 45%; border: 1px dashed rgba(148, 163, 184, 0.4); border-radius: 50%;"></div>
+            <div class="disk-arm" id="hdd-arm"></div>
+            <div class="disk-head" id="hdd-head"></div>
+        </div>
+        
+        <div class="explanation-box" style="background: rgba(148, 163, 184, 0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: left;">
+            <strong>HDD uses mechanical parts to read/write data</strong>
+            <ul style="color: var(--muted); margin-top: 0.8rem; padding-left: 1.2rem; font-size: 0.95rem; line-height: 1.6;">
+                <li>The disk (platter) must physically rotate.</li>
+                <li>The arm must physically move to the correct track (Seek Time).</li>
+                <li>This mechanical process creates noticeable delay.</li>
+            </ul>
+        </div>
+        
+        <button id="hdd-sim-btn" class="btn btn-primary" style="width: 100%;">
+            <span style="margin-right: 8px;">⏳</span> Simulate HDD Access
+        </button>
+        <p id="hdd-status" style="text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem; min-height: 20px;"></p>
+    </div>
+
+    <!-- SSD SECTION -->
+    <div class="card device-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Solid State Drive (SSD)</h3>
+            <span class="section-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Electronic</span>
+        </div>
+        
+        <div class="ssd-grid-wrap" style="padding: 1.5rem; background: var(--surface-strong); border-radius: 50%; width: 320px; height: 320px; margin: 2rem auto; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: inset 0 0 20px rgba(0,0,0,0.3);">
+            <div class="ssd-grid" id="ssd-scene" style="grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;">
+                <div class="block"></div><div class="block"></div><div class="block"></div><div class="block"></div>
+                <div class="block"></div><div class="block"></div><div class="block"></div><div class="block"></div>
+                <div class="block"></div><div class="block"></div><div class="block"></div><div class="block"></div>
+                <div class="block"></div><div class="block"></div><div class="block"></div><div class="block"></div>
+            </div>
+        </div>
+        
+        <div class="explanation-box" style="background: rgba(16, 185, 129, 0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: left;">
+            <strong style="color: #059669;">SSD accesses data instantly with no moving parts</strong>
+            <ul style="color: var(--muted); margin-top: 0.8rem; padding-left: 1.2rem; font-size: 0.95rem; line-height: 1.6;">
+                <li>Data is accessed via electrical grids instantly.</li>
+                <li>No moving parts, completely silent.</li>
+                <li>Vastly superior random read/write speeds.</li>
+            </ul>
+        </div>
+        
+        <button id="ssd-sim-btn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);">
+            <span style="margin-right: 8px;">⚡</span> Simulate SSD Access
+        </button>
+        <p id="ssd-status" style="text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem; min-height: 20px;"></p>
+    </div>
+</section>
+
+
+{% endblock %}

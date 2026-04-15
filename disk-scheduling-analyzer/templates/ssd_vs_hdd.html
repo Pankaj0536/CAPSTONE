@@ -3,63 +3,151 @@
 {% block title %}SSD vs HDD Performance{% endblock %}
 
 {% block content %}
+
 <section class="hero-section">
-    <div class="card hero-card">
-        <span class="section-badge">SSD vs HDD</span>
-        <h2>Compare Storage Performance</h2>
-        <p>Run the HDD scheduling simulator and compare its behavior with SSD's steady access performance.</p>
-        <div class="hero-buttons">
-            <a class="btn btn-secondary" href="{{ url_for('options') }}">Back to Options</a>
-            <a class="btn btn-primary" href="#simulator">Jump to Simulator</a>
+    <div class="hero-panel card">
+        <div class="hero-copy">
+            <span class="section-badge">SSD vs HDD</span>
+            <h1>Compare storage performance with clear visual insight</h1>
+            <p>Explore how HDD seek scheduling behaves against SSD's steady access pattern.</p>
+
+            <div class="hero-actions">
+                <a class="btn btn-secondary" href="{{ url_for('options') }}">Back</a>
+                <a class="btn btn-primary" href="#simulator">Start</a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="stats-card">
+                <strong>HDD vs SSD</strong>
+                <p>Compare performance visually</p>
+            </div>
+            <div class="stats-card">
+                <strong>Live Simulation</strong>
+                <p>Test algorithms in real-time</p>
+            </div>
         </div>
     </div>
 </section>
 
+<!-- ================= SIMULATOR ================= -->
+
 <section id="simulator" class="simulator-section">
+
+    <!-- INPUT PANEL -->
     <div class="card input-panel">
+
         <span class="section-badge">Disk Scheduler</span>
         <h2>HDD Request Inputs</h2>
-        <p>Enter comma-separated track numbers and compare FCFS, SSTF, and SCAN behavior.</p>
-        <label for="requestInput">Request queue</label>
-        <textarea id="requestInput" rows="5">10, 50, 90, 30, 70</textarea>
-        <div class="optimizer-grid">
+
+        <label>Request queue</label>
+        <textarea id="requestInput" rows="4" style="
+            width:100%;
+            padding:10px;
+            border-radius:10px;
+            border:none;
+            background:rgba(255, 255, 255, 0.05);
+            color:rgb(4, 4, 4);
+        ">10, 50, 90, 30, 70</textarea>
+
+        <div class="optimizer-grid" style="margin-top:10px;">
             <div>
-                <label for="headInput">Initial head</label>
-                <input id="headInput" type="number" value="35" min="0">
+                <label>Initial head</label>
+                <input id="headInput" type="number" value="35" style="width:100%; padding:8px; border-radius:8px;">
             </div>
             <div>
-                <label for="maxTrackInput">Max track</label>
-                <input id="maxTrackInput" type="number" value="199" min="1">
+                <label>Max track</label>
+                <input id="maxTrackInput" type="number" value="199" style="width:100%; padding:8px; border-radius:8px;">
             </div>
         </div>
-        <div class="hero-buttons">
+
+        <div style="display:flex; gap:12px; margin-top:15px;">
             <button class="btn btn-primary" id="runSimulatorBtn">Run Simulation</button>
             <button class="btn btn-secondary" id="resetSimulatorBtn">Reset</button>
         </div>
     </div>
 
+    <!-- RESULTS PANEL -->
     <div class="card results-panel section-gap">
-        <span class="section-badge">Results</span>
-        <h2>Simulation Summary</h2>
-        <p id="resultStatus">No simulation run yet. Click Run Simulation to compare algorithms.</p>
-        <div id="algorithmCards" class="optimizer-grid three-col section-gap">
-            <div class="card" style="background:rgba(255,255,255,0.04);border-radius:20px;padding:1rem;">Run the simulation to populate algorithm cards.</div>
+
+        <span class="section-badge">Result</span>
+        <h2>Disk Scheduler</h2>
+
+        <p id="resultStatus">Click Run Simulation to see results</p>
+
+        <!-- 🔥 FIXED: VERTICAL CARDS -->
+        <div id="algorithmCards" class="section-gap" style="
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        ">
+
+            <div class="card" style="
+                background:rgba(255,255,255,0.04);
+                border-radius:16px;
+                padding:1rem;
+            ">
+                Run simulation to populate results
+            </div>
+
         </div>
-        <div class="section-gap"><strong>Best Algorithm:</strong> <span id="bestAlgo">N/A</span></div>
+
+        <!-- BEST ALGO -->
+        <div style="
+            margin-top:15px;
+            padding:12px;
+            background:rgba(0,255,150,0.08);
+            border-radius:10px;
+            border-left:4px solid #00ff99;
+            font-size:1.1rem;
+        ">
+            <strong>🏆 Best Algorithm:</strong> <span id="bestAlgo">N/A</span>
+        </div>
+
     </div>
 </section>
 
-<section class="charts-grid">
-    <div class="card chart-card"><h3>Head Movement</h3><canvas id="movementChart" style="min-height:280px;"></canvas></div>
-    <div class="card chart-card"><h3>Performance Comparison</h3><canvas id="comparisonChart" style="min-height:280px;"></canvas></div>
+<!-- ================= ANALYZER ================= -->
+
+<section class="analyzer-section section-gap">
+    <div class="card">
+
+        <span class="section-badge">Performance Analyzer</span>
+        <h2>Visualizer</h2>
+
+        <div class="charts-grid">
+            <div class="card chart-card">
+                <h3>Head Movement</h3>
+                <canvas id="movementChart" style="min-height:220px;"></canvas>
+            </div>
+
+            <div class="card chart-card">
+                <h3>Comparison</h3>
+                <canvas id="comparisonChart" style="min-height:220px;"></canvas>
+            </div>
+        </div>
+
+        <div class="section-gap">
+            <h3>Seek Table</h3>
+
+            <table class="comparison-table" style="width:100%; margin-top:10px;">
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>HDD Seek</th>
+                        <th>SSD Time</th>
+                    </tr>
+                </thead>
+
+                <tbody id="comparisonTableBody">
+                    <tr>
+                        <td colspan="3" style="text-align:center;">Run simulation</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
 </section>
 
-<section class="card table-card section-gap">
-    <span class="section-badge">Data</span>
-    <h2>Seek & Access Table</h2>
-    <table>
-        <thead><tr><th>Algorithm</th><th>HDD seek</th><th>SSD access</th></tr></thead>
-        <tbody id="comparisonTableBody"><tr><td colspan="3" style="color:var(--muted);text-align:center;">Run simulation to populate the table.</td></tr></tbody>
-    </table>
-</section>
 {% endblock %}
